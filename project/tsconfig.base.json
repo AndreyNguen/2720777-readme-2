@@ -16,6 +16,10 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
-    "customConditions": ["@project/source"]
+    "customConditions": ["@project/source"],
+    "paths": {
+      "@project/shared/app/types": ["./shared/app/types/src/index.ts"],
+      "@project/types": ["./shared/app/types/src/index.ts"]
+    }
   }
 }
