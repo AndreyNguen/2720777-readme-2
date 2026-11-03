@@ -3,10 +3,7 @@ import { extname, basename } from 'node:path';
 import { MediaRepository } from './media.repository';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { Media, MediaType } from '@project/shared/app/types';
-
-const VIDEO_EXT = ['.mp4', '.avi', '.webm'];
-const AUDIO_EXT = ['.mp3', '.wav', '.ogg'];
-const IMAGE_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
+import { MEDIA_EXTENSIONS, MULTIPLIER_SIZE } from './media.constants';
 
 @Injectable()
 export class MediaService {
@@ -29,7 +26,7 @@ export class MediaService {
     const filename = basename(url.pathname) || 'file';
     const type = this.detectType(filename);
 
-    const size = dto.url.length * 100;
+    const size = dto.url.length * MULTIPLIER_SIZE;
 
     return this.mediaRepository.create({
       type,
@@ -49,9 +46,11 @@ export class MediaService {
   private detectType(filename: string): MediaType {
     const ext = extname(filename).toLowerCase();
 
-    if (VIDEO_EXT.includes(ext)) return MediaType.Video;
-    if (AUDIO_EXT.includes(ext)) return MediaType.Audio;
-    if (IMAGE_EXT.includes(ext)) return MediaType.Image;
+    for (const [type, extensions] of Object.entries(MEDIA_EXTENSIONS)) {
+      if (extensions.includes(ext as never)) {
+        return type as MediaType;
+      }
+    }
 
     return MediaType.File;
   }

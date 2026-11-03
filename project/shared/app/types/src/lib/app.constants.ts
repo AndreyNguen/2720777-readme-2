@@ -1,0 +1,7 @@
+export const DEFAULT_PORTS = {
+  API_GATEWAY: 3000,
+  USER: 3001,
+  POST: 3002,
+  MEDIA_DOWNLOADER: 3003,
+  NOTIFICATION: 3004,
+} as const;
