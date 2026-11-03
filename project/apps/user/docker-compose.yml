@@ -11,7 +11,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
-      - ./mongo-data:/data/db
+      - mongo-data:/data/db
 
   mongo-express:
     image: mongo-express:latest
@@ -26,3 +26,6 @@ services:
       ME_CONFIG_BASICAUTH: false
     depends_on:
       - mongo
+
+volumes:
+  mongo-data:
