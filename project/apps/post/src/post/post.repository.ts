@@ -14,18 +14,30 @@ export class PostRepository {
       where: {
         authorId: query.authorId,
         status: query.status,
-        // title: query.search
-        //   ? { contains: query.search, mode: 'insensitive' }
-        //   : undefined,
+        title: query.search
+          ? { contains: query.search, mode: 'insensitive' }
+          : undefined,
       },
       take: query.limit,
       skip: query.offset,
       orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { likes: true, comments: true },
+        },
+      },
     });
   }
 
   async findById(id: string): Promise<Post | null> {
-    const post = await this.prisma.post.findUnique({ where: { id } });
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { likes: true, comments: true },
+        },
+      },
+    });
     if (!post) return null;
     return { ...post, status: post.status as PostStatus };
   }
@@ -67,5 +79,23 @@ export class PostRepository {
     } catch {
       return false;
     }
+  }
+
+  async addLike(postId: string, userId: string) {
+    try {
+      await this.prisma.like.create({
+        data: { postId, userId },
+      });
+      return this.findById(postId);
+    } catch {
+      return this.findById(postId);
+    }
+  }
+
+  async removeLike(postId: string, userId: string) {
+    await this.prisma.like.deleteMany({
+      where: { postId, userId },
+    });
+    return this.findById(postId);
   }
 }

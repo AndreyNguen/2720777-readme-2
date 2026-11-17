@@ -4,7 +4,6 @@ import {
   NotFoundException,
   Param,
   UseGuards,
-  ParseUUIDPipe,
   Body,
   Patch,
 } from '@nestjs/common';
@@ -30,16 +29,16 @@ export class UserController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Получить профиль текущего пользователя' })
+  @ApiOperation({})
   getMe(@CurrentUser() user: AuthenticatedUser) {
     return user;
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Получить пользователя по ID' })
+  @ApiOperation({})
   @ApiResponse({ status: 200, type: UserRdo })
   @ApiResponse({ status: 404, description: 'Пользователь не найден' })
-  async findById(@Param('id', ParseUUIDPipe) id: string) {
+  async findById(@Param('id') id: string) {
     const user = await this.userService.findById(id);
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
@@ -50,7 +49,7 @@ export class UserController {
   @Patch('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Смена пароля' })
+  @ApiOperation({})
   @ApiResponse({ status: 200, description: 'Пароль успешно изменен' })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,

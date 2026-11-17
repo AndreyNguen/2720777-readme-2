@@ -6,9 +6,12 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UnauthorizedException,
+  Headers,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
@@ -24,7 +27,7 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Список публикаций с фильтрацией и пагинацией' })
+  @ApiOperation({ summary: 'Список постов с фильтрамиуу и пагинацией' })
   async findAll(@Query() query: QueryPostDto) {
     return this.postService.findAll(query);
   }
@@ -33,48 +36,75 @@ export class PostController {
   @ApiOperation({})
   @ApiParam({ name: 'id' })
   @ApiResponse({ status: 200, type: PostRdo })
-  @ApiResponse({ status: 404, description: 'Публикация не найдена' })
+  @ApiResponse({ status: 404, description: 'Публикации нет' })
   async findById(@Param('id') id: string): Promise<PostRdo> {
     const post = await this.postService.findById(id);
     return plainToInstance(PostRdo, post, { excludeExtraneousValues: true });
   }
 
   @Post()
-  @ApiOperation({})
+  @ApiOperation({ summary: 'Создать публикацию' })
   @ApiResponse({ status: 201, type: PostRdo })
-  async create(@Body() dto: CreatePostDto): Promise<PostRdo> {
-    const authorId = '00000000-0000-0000-0000-000000000000';
-    const post = await this.postService.create(dto, authorId);
+  async create(
+    @Body() dto: CreatePostDto,
+    @Headers('X-User-Id') userId: string,
+  ): Promise<PostRdo> {
+    if (!userId) {
+      throw new UnauthorizedException('Пользователь не авторизован');
+    }
+    const post = await this.postService.create(dto, userId);
     return plainToInstance(PostRdo, post, { excludeExtraneousValues: true });
   }
 
   @Patch(':id')
-  @ApiOperation({})
-  @ApiResponse({ status: 200, type: PostRdo })
-  @ApiResponse({ status: 404, description: 'Публикация не найдена' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePostDto,
+    @Headers('X-User-Id') userId: string,
   ): Promise<PostRdo> {
-    const post = await this.postService.update(id, dto);
+    const post = await this.postService.update(id, dto, userId);
     return plainToInstance(PostRdo, post, { excludeExtraneousValues: true });
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({})
-  @ApiResponse({ status: 204 })
-  @ApiResponse({ status: 404 })
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.postService.remove(id);
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('X-User-Id') userId: string,
+  ): Promise<void> {
+    await this.postService.remove(id, userId);
   }
 
   @Post(':id/repost')
-  @ApiOperation({})
+  @ApiOperation({ summary: 'Репост' })
   @ApiResponse({ status: 201, type: PostRdo })
-  async repost(@Param('id') id: string): Promise<PostRdo> {
-    const userId = '00000000-0000-0000-0000-000000000000';
+  async repost(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('X-User-Id') userId: string,
+  ): Promise<PostRdo> {
     const post = await this.postService.repost(id, userId);
+    return plainToInstance(PostRdo, post, { excludeExtraneousValues: true });
+  }
+
+  @Post(':id/like')
+  @ApiOperation({ summary: 'Поставить лайк' })
+  @ApiResponse({ status: 201, description: 'Лайк поставлен' })
+  async like(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('X-User-Id') userId: string,
+  ) {
+    const post = await this.postService.addLike(id, userId);
+    return plainToInstance(PostRdo, post, { excludeExtraneousValues: true });
+  }
+
+  @Delete(':id/like')
+  @ApiOperation({ summary: 'Убрать лайк' })
+  @ApiResponse({ status: 200, description: 'Лайк убран' })
+  async unlike(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('X-User-Id') userId: string,
+  ) {
+    const post = await this.postService.removeLike(id, userId);
     return plainToInstance(PostRdo, post, { excludeExtraneousValues: true });
   }
 }

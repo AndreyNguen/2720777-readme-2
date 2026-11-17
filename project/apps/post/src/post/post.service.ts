@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Post } from '@project/shared/app/types';
 import { PostRepository } from './post.repository';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -16,7 +20,7 @@ export class PostService {
   async findById(id: string): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
-      throw new NotFoundException('Публикация не найдена');
+      throw new NotFoundException('Пост не найден');
     }
     return post;
   }
@@ -25,19 +29,26 @@ export class PostService {
     return this.postRepository.create(dto, authorId);
   }
 
-  async update(id: string, dto: UpdatePostDto): Promise<Post> {
-    const updated = await this.postRepository.update(id, dto);
-    if (!updated) {
-      throw new NotFoundException('Публикация не найдена');
+  async update(id: string, dto: UpdatePostDto, userId: string): Promise<Post> {
+    const post = await this.findById(id);
+    if (post.authorId !== userId) {
+      throw new ForbiddenException('Вы можете редачить только свои посты');
     }
-    return updated;
+
+    const updatedPost = await this.postRepository.update(id, dto);
+    if (!updatedPost) {
+      throw new NotFoundException('Не удалось обновить пост');
+    }
+
+    return updatedPost;
   }
 
-  async remove(id: string): Promise<void> {
-    const removed = await this.postRepository.remove(id);
-    if (!removed) {
-      throw new NotFoundException('Публикация не найдена');
+  async remove(id: string, userId: string): Promise<void> {
+    const post = await this.findById(id);
+    if (post.authorId !== userId) {
+      throw new ForbiddenException('Можно удалять только свои публикации');
     }
+    await this.postRepository.remove(id);
   }
 
   async repost(postId: string, userId: string): Promise<Post> {
@@ -52,5 +63,21 @@ export class PostService {
       },
       userId,
     );
+  }
+
+  async addLike(postId: string, userId: string) {
+    const post = await this.postRepository.addLike(postId, userId);
+    if (!post) {
+      throw new NotFoundException('Пост не найден');
+    }
+    return post;
+  }
+
+  async removeLike(postId: string, userId: string) {
+    const post = await this.postRepository.removeLike(postId, userId);
+    if (!post) {
+      throw new NotFoundException('Пост не найден');
+    }
+    return post;
   }
 }

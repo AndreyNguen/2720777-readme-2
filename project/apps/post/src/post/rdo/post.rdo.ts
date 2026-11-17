@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { PostStatus } from '@project/shared/app/types';
 
 export class PostRdo {
@@ -26,6 +26,16 @@ export class PostRdo {
   @ApiProperty({ enum: PostStatus })
   @Expose()
   status!: PostStatus;
+
+  @ApiProperty({ description: 'Количество лайков', example: 0 })
+  @Expose()
+  @Transform(({ obj }) => obj._count?.likes ?? 0)
+  likesCount!: number;
+
+  @ApiProperty({ description: 'Количество комментов', example: 0 })
+  @Expose()
+  @Transform(({ obj }) => obj._count?.comments ?? 0)
+  commentsCount!: number;
 
   @ApiProperty({})
   @Expose()
