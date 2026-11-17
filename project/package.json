@@ -6,11 +6,11 @@
   "private": true,
   "dependencies": {
     "@nestjs-modules/mailer": "^4.0.0",
-    "@nestjs/axios": "^12.0.1",
+    "@nestjs/axios": "^12.0.2",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^12.1.1",
     "@nestjs/core": "^11.0.0",
-    "@nestjs/jwt": "^12.0.4",
+    "@nestjs/jwt": "^12.0.5",
     "@nestjs/microservices": "^11.2.10",
     "@nestjs/mongoose": "^12.0.0",
     "@nestjs/passport": "^12.0.1",

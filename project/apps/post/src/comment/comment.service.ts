@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Comment } from '@project/shared/app/types';
 import { CommentRepository } from './comment.repository';
 import { PostRepository } from '../post/post.repository';
@@ -24,7 +28,7 @@ export class CommentService {
   async findById(postId: string, commentId: string): Promise<Comment> {
     const comment = await this.commentRepository.findById(commentId);
     if (!comment || comment.postId !== postId) {
-      throw new NotFoundException('Комментарий не найден');
+      throw new NotFoundException('Коммент не найден');
     }
     return comment;
   }
@@ -42,27 +46,41 @@ export class CommentService {
     postId: string,
     commentId: string,
     dto: UpdateCommentDto,
+    userId: string,
   ): Promise<Comment> {
-    await this.findById(postId, commentId);
+    const comment = await this.findById(postId, commentId);
+    if (comment.authorId !== userId) {
+      throw new ForbiddenException('Вы можете изменять только свои комменты');
+    }
+
     const updated = await this.commentRepository.update(commentId, dto);
     if (!updated) {
-      throw new NotFoundException('Комментарий не найден');
+      throw new NotFoundException('Коммент не найден');
     }
     return updated;
   }
 
-  async remove(postId: string, commentId: string): Promise<void> {
-    await this.findById(postId, commentId);
+  async remove(
+    postId: string,
+    commentId: string,
+    userId: string,
+  ): Promise<void> {
+    const comment = await this.findById(postId, commentId);
+
+    if (comment.authorId !== userId) {
+      throw new ForbiddenException('Вы можете удалять только свои комментарии');
+    }
+
     const removed = await this.commentRepository.remove(commentId);
     if (!removed) {
-      throw new NotFoundException('Комментарий не найден');
+      throw new NotFoundException('Коммент не найден');
     }
   }
 
   private async ensurePostExists(postId: string): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
-      throw new NotFoundException('Публикация не найдена');
+      throw new NotFoundException('Пост не найден');
     }
   }
 }
