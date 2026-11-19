@@ -79,4 +79,8 @@ export class PostService {
     }
     return post;
   }
+
+  async getNewPostsForMailing() {
+    return this.postRepository.getNewPostsForMailing();
+  }
 }

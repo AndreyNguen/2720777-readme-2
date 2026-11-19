@@ -159,4 +159,31 @@ export class PostRepository {
     });
     return this.findById(postId);
   }
+
+  async getNewPostsForMailing() {
+    let state = await this.prisma.mailingState.findUnique({
+      where: { id: 'global' },
+    });
+    if (!state) {
+      state = await this.prisma.mailingState.create({ data: { id: 'global' } });
+    }
+
+    const lastSentAt = state.lastSentAt;
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        createdAt: { gt: lastSentAt },
+        status: 'published',
+        isRepost: false,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    await this.prisma.mailingState.update({
+      where: { id: 'global' },
+      data: { lastSentAt: new Date() },
+    });
+
+    return posts;
+  }
 }

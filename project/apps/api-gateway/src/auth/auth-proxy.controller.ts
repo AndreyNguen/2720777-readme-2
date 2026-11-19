@@ -7,6 +7,7 @@ import {
   UseGuards,
   Patch,
   Headers,
+  Delete,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { HttpService } from '@nestjs/axios';
@@ -47,8 +48,23 @@ export class AuthProxyController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Информация о пользователе' })
   async findUser(@Param('id') id: string) {
-    const userUrl = `${this.configService.get('USER_SERVICE_URL')}/users/${id}`;
-    const { data: user } = await firstValueFrom(this.httpService.get(userUrl));
+    const baseUrl = this.configService.get('USER_SERVICE_URL');
+
+    const { data: user } = await firstValueFrom(
+      this.httpService.get(`${baseUrl}/users/${id}`),
+    );
+
+    let subscribersCount = 0;
+    try {
+      const { data: stats } = await firstValueFrom(
+        this.httpService.get(`${baseUrl}/users/${id}/stats`),
+      );
+      subscribersCount = stats.subscribersCount || 0;
+    } catch (e) {
+      if (e instanceof Error) {
+        console.warn('Не удалось получить статистику пользователя');
+      }
+    }
 
     let postsCount = 0;
     try {
@@ -69,7 +85,7 @@ export class AuthProxyController {
       name: user.name,
       registeredAt: user.createdAt,
       postsCount: postsCount,
-      subscribersCount: 0,
+      subscribersCount: subscribersCount,
     };
   }
 
@@ -87,6 +103,40 @@ export class AuthProxyController {
       this.httpService.patch(url, dto, {
         headers: { Authorization: authHeader },
       }),
+    );
+    return data;
+  }
+
+  @Post('users/:id/subscribe')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Подписаться на пользователя' })
+  async subscribe(
+    @Param('id') targetId: string,
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const url = `${this.configService.get('USER_SERVICE_URL')}/users/${targetId}/subscribe`;
+    const { data } = await firstValueFrom(
+      this.httpService.post(
+        url,
+        {},
+        { headers: { Authorization: authHeader } },
+      ),
+    );
+    return data;
+  }
+
+  @Delete('users/:id/subscribe')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Отписаться от пользователя' })
+  async unsubscribe(
+    @Param('id') targetId: string,
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const url = `${this.configService.get('USER_SERVICE_URL')}/users/${targetId}/subscribe`;
+    const { data } = await firstValueFrom(
+      this.httpService.delete(url, { headers: { Authorization: authHeader } }),
     );
     return data;
   }

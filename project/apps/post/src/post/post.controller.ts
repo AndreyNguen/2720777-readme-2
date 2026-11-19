@@ -48,6 +48,12 @@ export class PostController {
     return { count: await this.postService.countByAuthor(authorId) };
   }
 
+  @Get('mailing/new')
+  @ApiOperation({ summary: 'Посты для рассылки' })
+  async getNewPostsForMailing() {
+    return this.postService.getNewPostsForMailing();
+  }
+
   @Post()
   @ApiOperation({ summary: 'Создать публикацию' })
   @ApiResponse({ status: 201, type: PostRdo })

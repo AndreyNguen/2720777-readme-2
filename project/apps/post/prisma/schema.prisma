@@ -73,3 +73,9 @@ model Like {
 
   @@unique([userId, postId])
 }
+
+model MailingState {
+  id            String   @id @default("global")
+  lastSentAt    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

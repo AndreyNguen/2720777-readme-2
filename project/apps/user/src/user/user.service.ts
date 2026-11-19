@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -23,6 +24,10 @@ export class UserService {
     return bcrypt.compare(password, hash);
   }
 
+  async getAllEmails(): Promise<string[]> {
+    return this.userRepository.findAllEmails();
+  }
+
   async create(dto: CreateUserDto) {
     const passwordHash = await this.getHash(dto.password);
 
@@ -40,6 +45,15 @@ export class UserService {
 
   findByEmail(email: string) {
     return this.userRepository.findByEmail(email);
+  }
+
+  async getUserStats(id: string) {
+    const user = await this.userRepository.findById(id);
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
+    return {
+      subscribersCount: user.subscribers?.length || 0,
+    };
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -60,5 +74,21 @@ export class UserService {
     await this.userRepository.updatePassword(userId, newHash);
 
     return { message: 'Пароль изменен' };
+  }
+
+  async subscribe(userId: string, targetId: string) {
+    if (userId === targetId) {
+      throw new BadRequestException('Нельзя подписаться на себя');
+    }
+    const target = await this.userRepository.findById(targetId);
+    if (!target) throw new NotFoundException('Пользователь не найден');
+
+    await this.userRepository.subscribe(userId, targetId);
+    return { message: 'Вы подписались' };
+  }
+
+  async unsubscribe(userId: string, targetId: string) {
+    await this.userRepository.unsubscribe(userId, targetId);
+    return { message: 'Вы отписались' };
   }
 }
