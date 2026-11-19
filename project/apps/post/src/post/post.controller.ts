@@ -42,6 +42,12 @@ export class PostController {
     return plainToInstance(PostRdo, post, { excludeExtraneousValues: true });
   }
 
+  @Get('count/:authorId')
+  @ApiOperation({ summary: 'Количество публикаций автора' })
+  async countByAuthor(@Param('authorId') authorId: string) {
+    return { count: await this.postService.countByAuthor(authorId) };
+  }
+
   @Post()
   @ApiOperation({ summary: 'Создать публикацию' })
   @ApiResponse({ status: 201, type: PostRdo })

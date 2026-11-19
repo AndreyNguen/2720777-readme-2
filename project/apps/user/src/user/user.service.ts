@@ -53,12 +53,12 @@ export class UserService {
       user.passwordHash,
     );
     if (!isValid) {
-      throw new UnauthorizedException('Неверный текущий пароль');
+      throw new UnauthorizedException('Неверный пароль');
     }
 
     const newHash = await this.getHash(dto.newPassword);
     await this.userRepository.updatePassword(userId, newHash);
 
-    return { message: 'Пароль успешно изменен' };
+    return { message: 'Пароль изменен' };
   }
 }
